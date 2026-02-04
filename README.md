@@ -6,6 +6,20 @@ A Linux desktop AI assistant. Ask questions, attach screenshots, get help with y
 
 **Status:** Early beta. Tested on Ubuntu 22.04 + GNOME. Should work on other distros but not verified yet. Bug reports welcome.
 
+## Screenshots
+
+**TuxAgent**
+
+![TuxAgent](screenshots/overlay.png)
+
+**"How do I install Spotify?"**
+
+![Install Spotify](screenshots/install-spotify.png)
+
+**"What's slowing down my computer?"**
+
+![System Analysis](screenshots/system-analysis.png)
+
 ## What it does
 
 - **Screenshot analysis** - Take a screenshot, ask "what is this?" or "how do I close this?"
