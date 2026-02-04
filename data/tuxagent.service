@@ -1,0 +1,23 @@
+[Unit]
+Description=TuxAgent - Linux AI Assistant
+Documentation=https://github.com/yourusername/tux-agent
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.tuxagent.Assistant
+ExecStart=/usr/bin/python3 /usr/lib/tuxagent/daemon/main.py
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=PYTHONPATH=/usr/lib/tuxagent
+Environment=PYTHONUNBUFFERED=1
+
+# Resource limits
+MemoryMax=1G
+CPUQuota=50%
+
+[Install]
+WantedBy=graphical-session.target

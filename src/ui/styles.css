@@ -1,0 +1,212 @@
+/* TuxAgent GTK4/libadwaita Styles */
+
+/* Main window */
+.tuxagent-overlay {
+    background-color: alpha(@window_bg_color, 0.95);
+    border-radius: 12px;
+    border: 1px solid @borders;
+}
+
+/* Header */
+.tuxagent-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid @borders;
+}
+
+.tuxagent-title {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Chat area */
+.chat-area {
+    padding: 16px;
+}
+
+/* Message bubbles */
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin: 4px 0;
+}
+
+.user-message {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    border-bottom-right-radius: 4px;
+}
+
+.assistant-message {
+    background-color: @card_bg_color;
+    border: 1px solid @borders;
+    border-bottom-left-radius: 4px;
+}
+
+/* Thinking indicator */
+.thinking-indicator {
+    padding: 8px 12px;
+    background-color: alpha(@window_bg_color, 0.5);
+    border-radius: 8px;
+    margin: 8px 0;
+}
+
+/* Tool execution card */
+.tool-card {
+    padding: 8px 12px;
+    background-color: alpha(@accent_bg_color, 0.1);
+    border-radius: 8px;
+    border: 1px solid alpha(@accent_color, 0.3);
+    margin: 4px 0;
+}
+
+/* Chat input */
+.chat-input {
+    padding: 12px 16px;
+    border-top: 1px solid @borders;
+    background-color: @window_bg_color;
+}
+
+.chat-input entry {
+    min-height: 36px;
+    border-radius: 18px;
+    padding: 0 16px;
+}
+
+/* Screenshot preview */
+.screenshot-preview {
+    padding: 8px;
+    background-color: alpha(@window_bg_color, 0.8);
+    border-radius: 8px;
+    border: 1px dashed @borders;
+    margin: 8px;
+}
+
+.screenshot-thumbnail {
+    border-radius: 4px;
+    border: 1px solid @borders;
+}
+
+/* Scrolled area */
+.chat-scroll {
+    background-color: transparent;
+}
+
+/* Close button */
+.close-button {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0;
+    border-radius: 12px;
+}
+
+/* Welcome message */
+.welcome-message {
+    padding: 24px;
+}
+
+.welcome-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.welcome-subtitle {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+/* Quick actions */
+.quick-actions {
+    margin-top: 16px;
+}
+
+.quick-action-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin: 4px;
+}
+
+/* Status bar */
+.status-bar {
+    padding: 4px 16px;
+    font-size: 11px;
+    opacity: 0.6;
+    border-top: 1px solid @borders;
+}
+
+/* Dark theme adjustments */
+.dark .message-bubble.assistant-message {
+    background-color: alpha(@window_bg_color, 0.6);
+}
+
+/* Animation for thinking */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1.0; }
+    100% { opacity: 0.6; }
+}
+
+.thinking-indicator label {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Warning banner */
+.warning-banner {
+    padding: 8px 12px;
+    background-color: alpha(@warning_color, 0.15);
+    border-radius: 8px;
+    border: 1px solid alpha(@warning_color, 0.3);
+}
+
+.warning-banner image {
+    color: @warning_color;
+}
+
+.warning-text {
+    font-size: 12px;
+}
+
+/* Settings dialog styles */
+.settings-section {
+    margin-bottom: 24px;
+}
+
+.monospace {
+    font-family: monospace;
+}
+
+/* Message screenshots */
+.message-screenshot {
+    border-radius: 8px;
+}
+
+.screenshot-button {
+    padding: 0;
+    border-radius: 8px;
+}
+
+.screenshot-button:hover {
+    opacity: 0.9;
+}
+
+/* File indicator in message */
+.file-indicator {
+    padding: 6px 10px;
+    background-color: alpha(@window_bg_color, 0.3);
+    border-radius: 6px;
+    border: 1px solid alpha(@borders, 0.5);
+}
+
+.file-indicator image {
+    opacity: 0.7;
+}
+
+.file-button {
+    padding: 0;
+    border-radius: 6px;
+}
+
+.file-button:hover .file-indicator {
+    background-color: alpha(@accent_bg_color, 0.2);
+    border-color: alpha(@accent_color, 0.5);
+}

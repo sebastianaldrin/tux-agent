@@ -1,0 +1,40 @@
+# TuxAgent - Linux-Integrated AI Assistant
+# Core dependencies
+
+# GTK4 bindings
+PyGObject>=3.44.0
+
+# D-Bus bindings
+dbus-python>=1.3.2
+pydbus>=0.6.0
+
+# HTTP client for API calls
+httpx>=0.25.0
+
+# Image handling for screenshots
+Pillow>=10.0.0
+
+# Markdown rendering
+markdown>=3.5.0
+
+# System utilities
+psutil>=5.9.0
+distro>=1.8.0
+
+# Document processing
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.2
+chardet>=5.2.0
+
+# Web tools
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+dnspython>=2.4.0
+python-whois>=0.8.0
+
+# Data processing
+python-dateutil>=2.8.2
+
+# Async support
+aiohttp>=3.8.0
