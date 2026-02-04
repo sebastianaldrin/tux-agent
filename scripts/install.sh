@@ -156,12 +156,25 @@ mkdir -p "$AUTOSTART_DIR"
 mkdir -p "$HOME/.config/tuxagent"
 mkdir -p "$HOME/.local/share/tuxagent/conversations"
 mkdir -p "$HOME/.cache/tuxagent"
+mkdir -p "$HOME/.local/share/icons/hicolor/48x48/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/512x512/apps"
 
 # Copy source files
 echo ""
 echo -e "${YELLOW}Installing TuxAgent files...${NC}"
 sudo cp -r "$PROJECT_DIR/src" "$INSTALL_DIR/"
 sudo cp -r "$PROJECT_DIR/config" "$INSTALL_DIR/"
+
+# Install icons
+echo ""
+echo -e "${YELLOW}Installing icons...${NC}"
+cp "$PROJECT_DIR/data/icons/hicolor/48x48/apps/tuxagent.png" "$HOME/.local/share/icons/hicolor/48x48/apps/"
+cp "$PROJECT_DIR/data/icons/hicolor/128x128/apps/tuxagent.png" "$HOME/.local/share/icons/hicolor/128x128/apps/"
+cp "$PROJECT_DIR/data/icons/hicolor/256x256/apps/tuxagent.png" "$HOME/.local/share/icons/hicolor/256x256/apps/"
+cp "$PROJECT_DIR/data/icons/hicolor/512x512/apps/tuxagent.png" "$HOME/.local/share/icons/hicolor/512x512/apps/"
+gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
 # Create CLI wrapper
 echo ""
@@ -204,7 +217,7 @@ echo -e "${YELLOW}Installing systemd service...${NC}"
 cat > "$SYSTEMD_DIR/tuxagent.service" << EOF
 [Unit]
 Description=TuxAgent - Linux AI Assistant
-Documentation=https://github.com/yourusername/tux-agent
+Documentation=https://github.com/sebastianaldrin/tux-agent
 After=graphical-session.target
 PartOf=graphical-session.target
 
@@ -232,12 +245,13 @@ cat > "$APPLICATIONS_DIR/org.tuxagent.desktop" << EOF
 Type=Application
 Name=TuxAgent
 Comment=Linux AI Assistant
-Icon=dialog-question
+Icon=tuxagent
 Exec=/usr/local/bin/tuxagent-overlay
 Terminal=false
 Categories=Utility;System;
 Keywords=AI;Assistant;Help;Linux;
 StartupNotify=false
+StartupWMClass=tuxagent
 EOF
 
 # Install autostart entry (optional)

@@ -439,7 +439,7 @@ class ChatInput(Gtk.Box):
 
         # Send button
         send_btn = Gtk.Button()
-        send_btn.set_icon_name("paper-plane-symbolic")
+        send_btn.set_icon_name("go-next-symbolic")
         send_btn.set_tooltip_text("Send (Enter)")
         send_btn.add_css_class("suggested-action")
         send_btn.connect("clicked", self._on_send_clicked)

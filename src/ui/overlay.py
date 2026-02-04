@@ -136,7 +136,7 @@ class TuxAgentOverlay(Adw.ApplicationWindow):
 
         # Title
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        icon = Gtk.Image.new_from_icon_name("dialog-question-symbolic")
+        icon = Gtk.Image.new_from_icon_name("tuxagent")
         title_box.append(icon)
         title_label = Gtk.Label(label="TuxAgent")
         title_label.add_css_class("title")
@@ -233,7 +233,7 @@ class TuxAgentOverlay(Adw.ApplicationWindow):
         welcome_box.set_vexpand(True)
 
         # Icon
-        icon = Gtk.Image.new_from_icon_name("dialog-question-symbolic")
+        icon = Gtk.Image.new_from_icon_name("tuxagent")
         icon.set_pixel_size(48)
         welcome_box.append(icon)
 
@@ -599,6 +599,10 @@ def main():
     """Entry point for GTK overlay"""
     import sys
     import dbus.mainloop.glib
+
+    # Set program name for desktop integration
+    GLib.set_prgname("tuxagent")
+    GLib.set_application_name("TuxAgent")
 
     # Enable D-Bus GLib main loop integration for signal handling
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
