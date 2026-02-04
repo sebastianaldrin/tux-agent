@@ -59,9 +59,12 @@ class APIProvider(ABC):
         tools: Optional[List[Dict]] = None,
         temperature: float = 0.7,
         max_tokens: int = 4000,
-        stream: bool = False
+        stream: bool = False,
+        max_retries: int = 3
     ) -> Dict[str, Any]:
-        """Make API request and return response"""
+        """Make API request with retry logic"""
+        import time
+
         payload = {
             "model": self.model,
             "messages": messages,
@@ -75,55 +78,102 @@ class APIProvider(ABC):
             payload["tool_choice"] = "auto"
 
         headers = self.get_headers()
+        last_error = None
 
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(
-                    self.endpoint,
-                    json=payload,
-                    headers=headers
-                )
+        for attempt in range(max_retries):
+            try:
+                with httpx.Client(timeout=self.timeout) as client:
+                    response = client.post(
+                        self.endpoint,
+                        json=payload,
+                        headers=headers
+                    )
 
-                if response.status_code != 200:
-                    logger.error(f"API error: {response.status_code} - {response.text}")
-                    return {
-                        "error": True,
-                        "message": f"API error: {response.status_code}"
-                    }
+                    if response.status_code != 200:
+                        logger.error(f"API error: {response.status_code} - {response.text}")
+                        # Retry on server errors
+                        if response.status_code >= 500 and attempt < max_retries - 1:
+                            wait_time = 2 ** attempt  # 1, 2, 4 seconds
+                            logger.info(f"Server error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                            time.sleep(wait_time)
+                            continue
+                        return {
+                            "error": True,
+                            "message": f"API error: {response.status_code}"
+                        }
 
-                return self._parse_response(response.json())
+                    return self._parse_response(response.json())
 
-        except httpx.TimeoutException:
-            logger.error("API request timed out")
+            except httpx.TimeoutException:
+                last_error = "timeout"
+                logger.error(f"API request timed out (attempt {attempt + 1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    logger.info(f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+            except httpx.ConnectError as e:
+                last_error = "connection"
+                logger.error(f"Connection error (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    logger.info(f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error: {e}")
+                # Don't retry auth errors
+                if e.response.status_code == 401:
+                    return {"error": True, "message": "Invalid API key. Please check your API key in Settings."}
+                elif e.response.status_code == 403:
+                    return {"error": True, "message": "Access denied. Your API key may not have the required permissions."}
+                elif e.response.status_code == 429:
+                    # Rate limit - wait longer
+                    if attempt < max_retries - 1:
+                        wait_time = 5 * (attempt + 1)
+                        logger.info(f"Rate limited, retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    return {"error": True, "message": "Rate limit exceeded. Please wait a moment and try again."}
+                elif e.response.status_code >= 500:
+                    last_error = "server"
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.info(f"Server error, retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                return {"error": True, "message": f"API error: {e.response.status_code}"}
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    time.sleep(wait_time)
+                    continue
+
+        # All retries failed
+        if last_error == "timeout":
             return {
                 "error": True,
-                "message": "Request timed out. The AI service is taking too long to respond. Please try again."
+                "message": "Request timed out after multiple attempts. Please try again."
             }
-        except httpx.ConnectError as e:
-            logger.error(f"Connection error: {e}")
+        elif last_error == "connection":
             return {
                 "error": True,
-                "message": "Cannot connect to AI service. Please check your internet connection."
+                "message": "Cannot connect to AI service after multiple attempts. Please check your internet connection."
             }
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error: {e}")
-            if e.response.status_code == 401:
-                return {"error": True, "message": "Invalid API key. Please check your API key in Settings."}
-            elif e.response.status_code == 403:
-                return {"error": True, "message": "Access denied. Your API key may not have the required permissions."}
-            elif e.response.status_code == 429:
-                return {"error": True, "message": "Rate limit exceeded. Please wait a moment and try again."}
-            elif e.response.status_code >= 500:
-                return {"error": True, "message": "AI service is temporarily unavailable. Please try again later."}
-            return {"error": True, "message": f"API error: {e.response.status_code}"}
-        except Exception as e:
-            logger.error(f"API request failed: {e}")
-            error_str = str(e).lower()
+        elif last_error == "server":
+            return {
+                "error": True,
+                "message": "AI service is temporarily unavailable. Please try again later."
+            }
+        else:
+            error_str = str(last_error).lower()
             if "connection" in error_str or "network" in error_str:
                 return {"error": True, "message": "Network error. Please check your internet connection."}
             elif "dns" in error_str or "resolve" in error_str:
                 return {"error": True, "message": "Cannot reach AI service. Please check your internet connection."}
-            return {"error": True, "message": f"Error: {str(e)}"}
+            return {"error": True, "message": f"Error: {last_error}"}
 
     def _parse_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
         """Parse API response (override for custom formats)"""

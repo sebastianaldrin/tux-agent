@@ -95,7 +95,9 @@ class ThreadManager:
                     metadata = ThreadMetadata.from_dict(thread_data)
                     self.thread_metadata[metadata.thread_id] = metadata
 
-                self.current_thread_id = data.get("current_thread_id")
+                # Don't restore current_thread_id - start fresh each time
+                # Old threads are preserved in metadata for future history feature
+                self.current_thread_id = None
 
                 logger.info(f"Loaded {len(self.thread_metadata)} thread metadata entries")
             else:
@@ -123,6 +125,10 @@ class ThreadManager:
 
     def create_thread(self, title: str = "New Chat") -> str:
         """Create a new thread and return its ID"""
+        # Save current conversation before switching
+        if self.current_conversation and self.current_thread_id:
+            self._save_thread_conversation()
+
         thread_id = f"thread_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
         # Create new conversation and set as current
@@ -151,6 +157,10 @@ class ThreadManager:
         if thread_id not in self.thread_metadata:
             logger.warning(f"Thread {thread_id} not found")
             return False
+
+        # Save current conversation before switching
+        if self.current_conversation and self.current_thread_id:
+            self._save_thread_conversation()
 
         self.current_thread_id = thread_id
 

@@ -1,0 +1,104 @@
+name: tuxagent
+version: '0.1.0'
+summary: AI desktop assistant for Linux
+description: |
+  TuxAgent is a friendly AI assistant for Linux desktop users.
+  Ask questions, attach screenshots, get help with your system.
+
+  Features:
+  - Screenshot analysis with vision AI
+  - 50+ system tools (files, network, processes)
+  - Native GTK4 interface
+  - CLI support
+
+  "I know what I want to do, just not how to do it on Linux" — TuxAgent helps with that.
+
+grade: stable
+base: core22
+confinement: classic
+
+architectures:
+  - build-on: amd64
+
+apps:
+  tuxagent:
+    command: bin/tuxagent-overlay
+    desktop: share/applications/org.tuxagent.desktop
+
+  tux:
+    command: bin/tux
+
+  daemon:
+    command: bin/tuxagent-daemon
+    daemon: simple
+
+parts:
+  tuxagent:
+    plugin: python
+    source: .
+    python-packages:
+      - httpx
+      - Pillow
+      - markdown
+      - psutil
+      - python-dateutil
+      - requests
+      - beautifulsoup4
+      - distro
+      - PyPDF2
+      - python-docx
+      - openpyxl
+      - chardet
+      - dnspython
+      - aiohttp
+    stage-packages:
+      - python3-gi
+      - python3-gi-cairo
+      - python3-dbus
+      - gir1.2-gtk-4.0
+      - gir1.2-adw-1
+      - libgtk-4-1
+      - libadwaita-1-0
+      - xdg-desktop-portal
+      - xdg-desktop-portal-gtk
+    override-build: |
+      craftctl default
+
+      # Create bin directory
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      mkdir -p $CRAFT_PART_INSTALL/share/applications
+      mkdir -p $CRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps
+
+      # Create wrapper scripts
+      cat > $CRAFT_PART_INSTALL/bin/tuxagent-overlay << 'EOF'
+      #!/bin/bash
+      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
+      export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"
+      exec python3 $SNAP/src/ui/main.py "$@"
+      EOF
+      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-overlay
+
+      cat > $CRAFT_PART_INSTALL/bin/tux << 'EOF'
+      #!/bin/bash
+      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
+      exec python3 $SNAP/src/cli/tux.py "$@"
+      EOF
+      chmod +x $CRAFT_PART_INSTALL/bin/tux
+
+      cat > $CRAFT_PART_INSTALL/bin/tuxagent-daemon << 'EOF'
+      #!/bin/bash
+      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
+      export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"
+      exec python3 $SNAP/src/daemon/main.py "$@"
+      EOF
+      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-daemon
+
+      # Copy source
+      cp -r src $CRAFT_PART_INSTALL/
+      cp -r config $CRAFT_PART_INSTALL/
+
+      # Copy desktop file
+      cp data/org.tuxagent.desktop $CRAFT_PART_INSTALL/share/applications/
+
+      # Copy icon
+      cp data/icons/hicolor/256x256/apps/tuxagent.png $CRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps/

@@ -66,28 +66,54 @@ class TuxAgentOverlay(Adw.ApplicationWindow):
         self._connect_signals()
 
     def _connect_dbus(self):
-        """Connect to TuxAgent D-Bus service"""
-        try:
-            bus = dbus.SessionBus()
-            proxy_obj = bus.get_object(DBUS_SERVICE_NAME, DBUS_OBJECT_PATH)
-            self._dbus_proxy = dbus.Interface(proxy_obj, DBUS_INTERFACE)
+        """Connect to TuxAgent D-Bus service, starting daemon if needed"""
+        import subprocess
+        import time
 
-            # Connect to signals for progress feedback
-            proxy_obj.connect_to_signal(
-                "ToolExecuting",
-                self._on_tool_executing,
-                dbus_interface=DBUS_INTERFACE
-            )
-            proxy_obj.connect_to_signal(
-                "ResponseChunk",
-                self._on_response_chunk,
-                dbus_interface=DBUS_INTERFACE
-            )
+        for attempt in range(2):
+            try:
+                bus = dbus.SessionBus()
+                proxy_obj = bus.get_object(DBUS_SERVICE_NAME, DBUS_OBJECT_PATH)
+                self._dbus_proxy = dbus.Interface(proxy_obj, DBUS_INTERFACE)
 
-            logger.info("Connected to TuxAgent D-Bus service")
-        except Exception as e:
-            logger.error(f"Failed to connect to D-Bus: {e}")
-            self._dbus_proxy = None
+                # Connect to signals for progress feedback
+                proxy_obj.connect_to_signal(
+                    "ToolExecuting",
+                    self._on_tool_executing,
+                    dbus_interface=DBUS_INTERFACE
+                )
+                proxy_obj.connect_to_signal(
+                    "ResponseChunk",
+                    self._on_response_chunk,
+                    dbus_interface=DBUS_INTERFACE
+                )
+
+                logger.info("Connected to TuxAgent D-Bus service")
+                return
+            except Exception as e:
+                if attempt == 0:
+                    # Daemon not running, start it
+                    logger.info("Daemon not running, starting it...")
+                    try:
+                        subprocess.Popen(
+                            ["tuxagent-daemon"],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL
+                        )
+                    except FileNotFoundError:
+                        # Development mode - try python directly
+                        import sys
+                        from pathlib import Path
+                        daemon_path = Path(__file__).parent.parent / "daemon" / "main.py"
+                        subprocess.Popen(
+                            [sys.executable, str(daemon_path)],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL
+                        )
+                    time.sleep(2)  # Wait for daemon to start
+                else:
+                    logger.error(f"Failed to connect to D-Bus: {e}")
+                    self._dbus_proxy = None
 
     def _on_tool_executing(self, tool_name):
         """Handle tool execution signal - update UI with progress"""
@@ -354,7 +380,7 @@ class TuxAgentOverlay(Adw.ApplicationWindow):
         def do_request():
             try:
                 if self._dbus_proxy is None:
-                    return "Error: TuxAgent daemon is not running. Start it with: tuxagent-daemon"
+                    return "Error: Could not connect to TuxAgent service. Please restart the application."
 
                 if screenshot:
                     response = self._dbus_proxy.AskWithScreenshot(full_message, screenshot, timeout=DBUS_TIMEOUT)
