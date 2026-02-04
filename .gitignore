@@ -44,3 +44,9 @@ license.json
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Snap build artifacts
+parts/
+prime/
+stage/
+*.snap

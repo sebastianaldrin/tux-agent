@@ -22,36 +22,25 @@ architectures:
 
 apps:
   tuxagent:
-    command: bin/tuxagent-overlay
+    command: bin/tuxagent-wrapper
     desktop: share/applications/org.tuxagent.desktop
 
   tux:
-    command: bin/tux
+    command: bin/tux-wrapper
 
   daemon:
-    command: bin/tuxagent-daemon
+    command: bin/tuxagent-daemon-wrapper
     daemon: simple
 
 parts:
   tuxagent:
-    plugin: python
+    plugin: nil
     source: .
-    python-packages:
-      - httpx
-      - Pillow
-      - markdown
-      - psutil
-      - python-dateutil
-      - requests
-      - beautifulsoup4
-      - distro
-      - PyPDF2
-      - python-docx
-      - openpyxl
-      - chardet
-      - dnspython
-      - aiohttp
+    build-packages:
+      - python3-pip
     stage-packages:
+      - python3
+      - python3-pip
       - python3-gi
       - python3-gi-cairo
       - python3-dbus
@@ -59,46 +48,50 @@ parts:
       - gir1.2-adw-1
       - libgtk-4-1
       - libadwaita-1-0
-      - xdg-desktop-portal
-      - xdg-desktop-portal-gtk
     override-build: |
       craftctl default
 
-      # Create bin directory
+      # Copy source files
+      mkdir -p $CRAFT_PART_INSTALL/opt/tuxagent
+      cp -r src $CRAFT_PART_INSTALL/opt/tuxagent/
+      cp -r config $CRAFT_PART_INSTALL/opt/tuxagent/
+
+      # Install Python dependencies to snap's lib
+      pip3 install --target=$CRAFT_PART_INSTALL/opt/tuxagent/lib \
+        httpx Pillow markdown psutil python-dateutil requests \
+        beautifulsoup4 distro PyPDF2 python-docx openpyxl chardet dnspython aiohttp
+
+      # Create directories
       mkdir -p $CRAFT_PART_INSTALL/bin
       mkdir -p $CRAFT_PART_INSTALL/share/applications
       mkdir -p $CRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps
 
-      # Create wrapper scripts
-      cat > $CRAFT_PART_INSTALL/bin/tuxagent-overlay << 'EOF'
-      #!/bin/bash
-      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
-      export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"
-      exec python3 $SNAP/src/ui/main.py "$@"
-      EOF
-      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-overlay
+      # Create GUI wrapper script
+      printf '%s\n' \
+        '#!/bin/bash' \
+        'export PYTHONPATH="$SNAP/opt/tuxagent/lib:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"' \
+        'export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"' \
+        'exec python3 "$SNAP/opt/tuxagent/src/ui/main.py" "$@"' \
+        > $CRAFT_PART_INSTALL/bin/tuxagent-wrapper
+      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-wrapper
 
-      cat > $CRAFT_PART_INSTALL/bin/tux << 'EOF'
-      #!/bin/bash
-      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
-      exec python3 $SNAP/src/cli/tux.py "$@"
-      EOF
-      chmod +x $CRAFT_PART_INSTALL/bin/tux
+      # Create CLI wrapper script
+      printf '%s\n' \
+        '#!/bin/bash' \
+        'export PYTHONPATH="$SNAP/opt/tuxagent/lib:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"' \
+        'exec python3 "$SNAP/opt/tuxagent/src/cli/tux.py" "$@"' \
+        > $CRAFT_PART_INSTALL/bin/tux-wrapper
+      chmod +x $CRAFT_PART_INSTALL/bin/tux-wrapper
 
-      cat > $CRAFT_PART_INSTALL/bin/tuxagent-daemon << 'EOF'
-      #!/bin/bash
-      export PYTHONPATH="$SNAP/lib/python3.10/site-packages:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"
-      export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"
-      exec python3 $SNAP/src/daemon/main.py "$@"
-      EOF
-      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-daemon
+      # Create daemon wrapper script
+      printf '%s\n' \
+        '#!/bin/bash' \
+        'export PYTHONPATH="$SNAP/opt/tuxagent/lib:$SNAP/usr/lib/python3/dist-packages:$PYTHONPATH"' \
+        'export GI_TYPELIB_PATH="$SNAP/usr/lib/x86_64-linux-gnu/girepository-1.0:$GI_TYPELIB_PATH"' \
+        'exec python3 "$SNAP/opt/tuxagent/src/daemon/main.py" "$@"' \
+        > $CRAFT_PART_INSTALL/bin/tuxagent-daemon-wrapper
+      chmod +x $CRAFT_PART_INSTALL/bin/tuxagent-daemon-wrapper
 
-      # Copy source
-      cp -r src $CRAFT_PART_INSTALL/
-      cp -r config $CRAFT_PART_INSTALL/
-
-      # Copy desktop file
+      # Copy desktop file and icon
       cp data/org.tuxagent.desktop $CRAFT_PART_INSTALL/share/applications/
-
-      # Copy icon
       cp data/icons/hicolor/256x256/apps/tuxagent.png $CRAFT_PART_INSTALL/share/icons/hicolor/256x256/apps/
